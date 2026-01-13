@@ -1,0 +1,5 @@
+set -euo pipefail
+tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+curl -fsSL "https://raw.githubusercontent.com/MISIKEX/rpi-argon/main/argon-one-v2/argon1.sh" -o "$tmp"
+chmod +x "$tmp"
+sudo bash "$tmp"
