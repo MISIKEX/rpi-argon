@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Keep separate append operations while generating configuration files.
+# shellcheck disable=SC2129
+
 echo "*************"
 echo " Argon Setup  "
 echo "*************"
@@ -73,8 +76,8 @@ fi
 CONFIG=/boot${FIRMWARE}/config.txt
 
 set_config_var() {
-    if ! grep -q -E "$1=$2" $3 ; then
-      echo "$1=$2" | sudo tee -a $3 > /dev/null
+    if ! grep -q -E "$1=$2" "$3" ; then
+      echo "$1=$2" | sudo tee -a "$3" > /dev/null
     fi
 }
 
@@ -107,7 +110,7 @@ get_serial_hw() {
 }
 
 do_serial_hw() {
-  if [ $1 -eq 0 ] ; then
+  if [ "$1" -eq 0 ] ; then
     if is_pifive ; then
       set_config_var dtparam=uart0 on $CONFIG
     else
@@ -166,7 +169,6 @@ CHECKGPIOMODE="libgpiod" # libgpiod or rpigpio
 # Check if Raspbian, Ubuntu, others
 CHECKPLATFORM="Others"
 CHECKPLATFORMVERSION=""
-CHECKPLATFORMVERSIONNUM=""
 if [ -f "/etc/os-release" ]
 then
 	source /etc/os-release
@@ -184,22 +186,20 @@ then
 		CHECKPLATFORM="Ubuntu"
 		CHECKPLATFORMVERSION=$VERSION_ID
 	fi
-	echo ${CHECKPLATFORMVERSION} | grep -e "\." > /dev/null
-	if [ $? -eq 0 ]
+	if echo "$CHECKPLATFORMVERSION" | grep -e "\." > /dev/null
 	then
-		CHECKPLATFORMVERSIONNUM=`cut -d "." -f2 <<< $CHECKPLATFORMVERSION `
-		CHECKPLATFORMVERSION=`cut -d "." -f1 <<< $CHECKPLATFORMVERSION `
+		CHECKPLATFORMVERSION=$(cut -d "." -f1 <<< "$CHECKPLATFORMVERSION")
 	fi
 fi
 
-gpiopkg="python3-libgpiod"
+gpiopkg=(python3-libgpiod)
 if [ "$CHECKGPIOMODE" = "rpigpio" ]
 then
 	if [ "$CHECKPLATFORM" = "Raspbian" ]
 	then
-		gpiopkg="raspi-gpio python3-rpi.gpio"
+		gpiopkg=(raspi-gpio python3-rpi.gpio)
 	else
-		gpiopkg="python3-rpi.gpio"
+		gpiopkg=(python3-rpi.gpio)
 	fi
 fi
 
@@ -207,31 +207,31 @@ if [ "$CHECKPLATFORM" = "Raspbian" ]
 then
 	if [ "$CHECKDEVICE" = "eon" ]
 	then
-		pkglist=($gpiopkg python3-smbus i2c-tools smartmontools)
+		pkglist=("${gpiopkg[@]}" python3-smbus i2c-tools smartmontools)
 	elif [ "$CHECKDEVICE" = "oneoled" ]
 	then
-		pkglist=($gpiopkg python3-smbus i2c-tools python3-luma.oled)
+		pkglist=("${gpiopkg[@]}" python3-smbus i2c-tools python3-luma.oled)
 	else
-		pkglist=($gpiopkg python3-smbus i2c-tools)
+		pkglist=("${gpiopkg[@]}" python3-smbus i2c-tools)
 	fi
 else
 	# Todo handle lgpio
 	# Ubuntu has serial and i2c enabled
 	if [ "$CHECKDEVICE" = "eon" ]
 	then
-		pkglist=($gpiopkg python3-smbus i2c-tools smartmontools)
+		pkglist=("${gpiopkg[@]}" python3-smbus i2c-tools smartmontools)
 	elif [ "$CHECKDEVICE" = "oneoled" ]
 	then
-		pkglist=($gpiopkg python3-smbus i2c-tools python3-luma.oled)
+		pkglist=("${gpiopkg[@]}" python3-smbus i2c-tools python3-luma.oled)
 	else
-		pkglist=($gpiopkg python3-smbus i2c-tools)
+		pkglist=("${gpiopkg[@]}" python3-smbus i2c-tools)
 	fi
 fi
 
 echo "Installing/updating dependencies..."
 
-for curpkg in ${pkglist[@]}; do
-	sudo apt-get install -y $curpkg
+for curpkg in "${pkglist[@]}"; do
+	sudo apt-get install -y "$curpkg"
 	RESULT=$(argon_check_pkg "$curpkg")
 	if [ "NG" == "$RESULT" ]
 	then
@@ -245,8 +245,7 @@ done
 echo "Updating configuration ..."
 
 # Ubuntu Mate for RPi has raspi-config too
-command -v raspi-config &> /dev/null
-if [ $? -eq 0 ]
+if command -v raspi-config &> /dev/null
 then
 	# Enable i2c and serial
 	sudo raspi-config nonint do_i2c 0
@@ -256,7 +255,7 @@ then
 		if [ "$CHECKPLATFORM" = "Raspbian" ]
 		then
 			# bookworm raspi-config prompts user when configuring serial
-			if [ $(get_serial_hw) -eq 1 ]; then
+			if [ "$(get_serial_hw)" -eq 1 ]; then
 				do_serial_hw 0
 			fi
 		else
@@ -492,10 +491,8 @@ then
 
 	if [ "$CHECKDEVICE" = "oneoled" ]
 	then
-		for binfile in logo1v5
-		do
-			sudo wget $ARGONDOWNLOADSERVER/oled/${binfile}.bin -O $INSTALLATIONFOLDER/oled/${binfile}.bin --quiet
-		done
+		binfile=logo1v5
+		sudo wget $ARGONDOWNLOADSERVER/oled/${binfile}.bin -O $INSTALLATIONFOLDER/oled/${binfile}.bin --quiet
 	fi
 fi
 
@@ -517,6 +514,9 @@ sudo touch $configscript
 # To ensure we can write the following lines
 sudo chmod 666 $configscript
 
+# Variables in these strings belong to the generated script, not this installer.
+# shellcheck disable=SC2016
+{
 echo '#!/bin/bash' >> $configscript
 
 echo 'echo "--------------------------"' >> $configscript
@@ -584,18 +584,18 @@ else
 	then
 		echo '	echo "  3. Argon Industria UPS"' >> $configscript
 		uninstalloption="7"
-		blstrdacoption=$(($uninstalloption-3))
+		blstrdacoption=$((uninstalloption-3))
 		echo "	echo \"  $blstrdacoption. Configure BLSTR DAC (v3/v5 only)\"" >> $configscript
 	else
 		uninstalloption="6"
-		blstrdacoption=$(($uninstalloption-3))
+		blstrdacoption=$((uninstalloption-3))
 		echo "	echo \"  $blstrdacoption. Configure BLSTR DAC (v3 only)\"" >> $configscript
 	fi
 fi
 
-unitsoption=$(($uninstalloption-2))
+unitsoption=$((uninstalloption-2))
 echo "	echo \"  $unitsoption. Configure Units\"" >> $configscript
-statusoption=$(($uninstalloption-1))
+statusoption=$((uninstalloption-1))
 echo "	echo \"  $statusoption. System Information\"" >> $configscript
 
 echo "	echo \"  $uninstalloption. Uninstall\"" >> $configscript
@@ -701,6 +701,7 @@ echo "		$uninstallscript" >> $configscript
 echo '		mainloopflag=0' >> $configscript
 echo '	fi' >> $configscript
 echo 'done' >> $configscript
+}
 
 sudo chmod 755 $configscript
 
@@ -731,21 +732,21 @@ then
 		imagefile=argoneon.png
 	fi
 	sudo wget https://download.argon40.com/$imagefile -O /usr/share/pixmaps/$imagefile --quiet
-	if [ -f $shortcutfile ]; then
-		sudo rm $shortcutfile
+	if [ -f "$shortcutfile" ]; then
+		sudo rm "$shortcutfile"
 	fi
 
 	# Create Shortcuts
-	echo "[Desktop Entry]" > $shortcutfile
-	echo "Name=Argon Configuration" >> $shortcutfile
-	echo "Comment=Argon Configuration" >> $shortcutfile
-	echo "Icon=/usr/share/pixmaps/$imagefile" >> $shortcutfile
-	echo 'Exec='$terminalcmd' "Argon Configuration" -e '$configscript >> $shortcutfile
-	echo "Type=Application" >> $shortcutfile
-	echo "Encoding=UTF-8" >> $shortcutfile
-	echo "Terminal=false" >> $shortcutfile
-	echo "Categories=None;" >> $shortcutfile
-	chmod 755 $shortcutfile
+	echo "[Desktop Entry]" > "$shortcutfile"
+	echo "Name=Argon Configuration" >> "$shortcutfile"
+	echo "Comment=Argon Configuration" >> "$shortcutfile"
+	echo "Icon=/usr/share/pixmaps/$imagefile" >> "$shortcutfile"
+	echo "Exec=$terminalcmd \"Argon Configuration\" -e $configscript" >> "$shortcutfile"
+	echo "Type=Application" >> "$shortcutfile"
+	echo "Encoding=UTF-8" >> "$shortcutfile"
+	echo "Terminal=false" >> "$shortcutfile"
+	echo "Categories=None;" >> "$shortcutfile"
+	chmod 755 "$shortcutfile"
 fi
 
 configcmd="$(basename -- $configscript)"
@@ -756,9 +757,9 @@ if [ "$setupmode" = "Setup" ]
 then
 	if [ -f "/usr/bin/$configcmd" ]
 	then
-		sudo rm /usr/bin/$configcmd
+		sudo rm "/usr/bin/$configcmd"
 	fi
-	sudo ln -s $configscript /usr/bin/$configcmd
+	sudo ln -s "$configscript" "/usr/bin/$configcmd"
 
 	if [ "$CHECKDEVICE" = "one" ] || [ "$CHECKDEVICE" = "oneoled" ]
 	then

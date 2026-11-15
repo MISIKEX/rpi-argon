@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -euo pipefail
 tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
 curl -fsSL "https://raw.githubusercontent.com/MISIKEX/rpi-argon/main/argon-one-v3/argon-eeprom.sh" -o "$tmp"
