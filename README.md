@@ -8,11 +8,13 @@
 
 ---
 
-## Helyi fejlesztés natív WSL-ben
+## Helyi fejlesztés natív Ubuntun
 
-A fejlesztői munkafa `/home/codex/projects/rpi-argon` az `Ubuntu-26.04` alatt. Git-, Bash-, Python- és statikus ellenőrzéseket natív Linux-eszközökkel futtass; a Windows-native Codex Desktopból a `C:\- CODEX\RENDSZER\WSL.ps1` indító ezt a `-WorkingDirectory` értéket használja. A meglévő Windows-kapcsolatok megmaradnak, automatikus munkafa-szinkron nincs.
+A fejlesztői munkafa `/home/misikex/Projektek/rpi-argon`, a munkaállomás natív Ubuntu 26.10 Desktop GNOME, `misikex` felhasználóval és `codex` gépnévvel. A grafikus Codexből a projekt gyökerében futtasd a natív Linux Git-, Bash-, Python- és statikus ellenőrzéseket. A napi fejlesztéshez nincs WSL- vagy PowerShell-köztes réteg; Windows csak távoli kliens lehet.
 
-A telepítő célja továbbra is a saját Raspberry Pi hardver. A teljes telepítőt ne futtasd WSL-ben: a Pi OS, boot-, GPIO-, kijelző-, Wayland- és eszközfüggő viselkedést csak a külön kijelölt céleszköz igazolhatja. A helyi klón létrehozása nem telepítési felhatalmazás.
+A rendszer `/usr/bin/python3` interpreterét (Ubuntu Python 3.14.8) ne cseréld le. A külön `python3.15` az uv által kezelt CPython 3.15.2; szükséges helyi Python-függőséget elkülönített virtuális környezetbe telepíts. Ezek a munkaállomás eszközei, nem új minimumkövetelmények a Pi telepítőjéhez.
+
+A telepítő célja továbbra is a saját Raspberry Pi hardver. A teljes telepítőt ne futtasd a fejlesztői munkaállomáson: a Pi OS, boot-, GPIO-, kijelző-, Wayland- és eszközfüggő viselkedést csak a külön kijelölt céleszköz igazolhatja. Hardvertelepítő csak külön telepítési kérésre futtatható; a helyi klón létrehozása nem telepítési felhatalmazás.
 
 
 ## Telepítési célok és belépési pontok
@@ -59,7 +61,7 @@ Az időellenőrzés a `http://worldtimeapi.org/api/ip.txt` szolgáltatást is ha
 A gyártói letöltések nincsenek ebben a repóban verzióhoz vagy hashhez rögzítve:
 a klón önmagában nem teljes offline telepítő és nem garantál változatlan külső tartalmat.
 
-A PC/WSL fejlesztői környezet visszaállításához a
+A natív Ubuntu fejlesztői környezet visszaállításához a
 [központi munkaállomás-helyreállítási útmutató](https://github.com/MISIKEX/server-admin-mcp/blob/main/.github/docs/WORKSTATION_REINSTALL.md)
-tartozik. A Pi hardvertelepítése ettől külön művelet; WSL-ben csak a forrás olvasása
+tartozik. A Pi hardvertelepítése ettől külön művelet; a munkaállomáson csak a forrás olvasása
 és statikus ellenőrzése végezhető.
